@@ -3,22 +3,27 @@ package configs
 import "github.com/spf13/viper"
 
 type conf struct {
-	DBDriver          string `mapstructure:"DB_DRIVER"`
-	DBHost            string `mapstructure:"DB_HOST"`
-	DBPort            string `mapstructure:"DB_PORT"`
-	DBUser            string `mapstructure:"DB_USER"`
-	DBPassword        string `mapstructure:"DB_PASSWORD"`
-	DBName            string `mapstructure:"DB_NAME"`
-	WebServerPort     string `mapstructure:"WEB_SERVER_PORT"`
-	GRPCServerPort    string `mapstructure:"GRPC_SERVER_PORT"`
-	GraphQLServerPort string `mapstructure:"GRAPHQL_SERVER_PORT"`
+	DBDriver           string `mapstructure:"DB_DRIVER"`
+	DBHost             string `mapstructure:"DB_HOST"`
+	DBPort             string `mapstructure:"DB_PORT"`
+	DBUser             string `mapstructure:"DB_USER"`
+	DBPassword         string `mapstructure:"DB_PASSWORD"`
+	DBName             string `mapstructure:"DB_NAME"`
+	WebServerPort      string `mapstructure:"WEB_SERVER_PORT"`
+	GRPCServerPort     string `mapstructure:"GRPC_SERVER_PORT"`
+	GraphQLServerPort  string `mapstructure:"GRAPHQL_SERVER_PORT"`
+	RabbitMqConnection string `mapstructure:"RABBITMQ_CONNECTION_STRING"`
 }
 
-func LoadConfig(path string) (*conf, error) {
-	var cfg *conf
+var cfg *conf
+
+func LoadConfig() *conf {
+	if cfg != nil {
+		return cfg
+	}
 	viper.SetConfigName("app_config")
 	viper.SetConfigType("env")
-	viper.AddConfigPath(path)
+	viper.AddConfigPath(".")
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
@@ -29,5 +34,5 @@ func LoadConfig(path string) (*conf, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cfg, err
+	return cfg
 }

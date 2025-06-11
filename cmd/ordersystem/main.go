@@ -24,10 +24,7 @@ import (
 )
 
 func main() {
-	configs, err := configs.LoadConfig(".")
-	if err != nil {
-		panic(err)
-	}
+	configs := configs.LoadConfig()
 
 	db, err := sql.Open(configs.DBDriver, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", configs.DBUser, configs.DBPassword, configs.DBHost, configs.DBPort, configs.DBName))
 	if err != nil {
@@ -73,7 +70,8 @@ func main() {
 }
 
 func getRabbitMQChannel() *amqp.Channel {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	configs := configs.LoadConfig()
+	conn, err := amqp.Dial(configs.RabbitMqConnection)
 	if err != nil {
 		panic(err)
 	}
