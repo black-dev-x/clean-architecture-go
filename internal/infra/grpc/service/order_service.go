@@ -20,7 +20,7 @@ func NewOrderService(createOrderUseCase usecase.CreateOrderUseCase, listOrdersUs
 	}
 }
 
-func (s *OrderService) ListOrders(ctx context.Context, in *pb.Empty) (*pb.ListOrders, error) {
+func (s *OrderService) GetOrders(ctx context.Context, in *pb.Empty) (*pb.ListOrders, error) {
 	dto, err := s.ListOrdersUseCase.Execute()
 	if err != nil {
 		return nil, err
