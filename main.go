@@ -34,16 +34,21 @@ func main() {
 
 	rabbitMQChannel := getRabbitMQChannel()
 
+	// this is definitely not clean architecture, imagine if you had 2, 3, 4 events, this is not the place
 	eventDispatcher := events.NewEventDispatcher()
 	eventDispatcher.Register("OrderCreated", &handler.OrderCreatedHandler{
 		RabbitMQChannel: rabbitMQChannel,
 	})
 
+	// creation of the use cases, in a big software we would have thousands of use cases
+	// this is not a good approach, and it does not make it simple for beginners
 	createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
+	listOrdersUseCase := NewListOrdersUseCase(db)
 
 	webserver := webserver.NewWebServer(configs.WebServerPort)
 	webOrderHandler := NewWebOrderHandler(db, eventDispatcher)
-	webserver.AddHandler("/order", webOrderHandler.Create)
+	webserver.Router.Post("/order", webOrderHandler.Create)
+	webserver.Router.Get("/order", webOrderHandler.List)
 	fmt.Println("Starting web server on port", configs.WebServerPort)
 	go webserver.Start()
 
@@ -61,8 +66,10 @@ func main() {
 
 	srv := graphql_handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		CreateOrderUseCase: *createOrderUseCase,
+		ListOrdersUseCase:  *listOrdersUseCase,
 	}}))
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+
+	http.Handle("/graphql", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
 	fmt.Println("Starting GraphQL server on port", configs.GraphQLServerPort)
