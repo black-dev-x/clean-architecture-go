@@ -1,10 +1,10 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - internal/**/*.graphqls
+  - ./internal/infra/graph/schema.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: graph/generated.go
+  filename: ./internal/infra/graph/generated.go
   package: graph
 
 # Uncomment to enable federation
@@ -12,17 +12,20 @@ exec:
 #   filename: graph/federation.go
 #   package: graph
 
-# Where should any generated models go?
-model:
-  filename: graph/model/models_gen.go
-  package: model
-
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: graph
+  dir: ./internal/infra/graph
   package: graph
 
+
+models:
+  Order:
+    model:
+      - ./internal/infra/graph/model.Order
+  OrderInput:
+    model:
+      - ./internal/infra/graph/model.OrderInput
 # Optional: turn on use ` + "`" + `gqlgen:"fieldName"` + "`" + ` tags in your models
 # struct_tag: json
 
@@ -49,15 +52,5 @@ autobind:
 # The first line in each type will be used as defaults for resolver arguments and
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
-models:
-  ID:
-    model:
-      - github.com/99designs/gqlgen/graphql.ID
-      - github.com/99designs/gqlgen/graphql.Int
-      - github.com/99designs/gqlgen/graphql.Int64
-      - github.com/99designs/gqlgen/graphql.Int32
-  Int:
-    model:
-      - github.com/99designs/gqlgen/graphql.Int
-      - github.com/99designs/gqlgen/graphql.Int64
-      - github.com/99designs/gqlgen/graphql.Int32
+
+  

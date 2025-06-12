@@ -8,4 +8,5 @@ import "github.com/black-dev-x/clean-architecture-go/internal/usecase"
 
 type Resolver struct {
 	CreateOrderUseCase usecase.CreateOrderUseCase
+	ListOrdersUseCase  usecase.ListOrdersUseCase
 }
