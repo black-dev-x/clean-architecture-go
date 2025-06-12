@@ -1,3 +1,9 @@
+# Updated schema.graphqls?
+
+```
+go run github.com/99designs/gqlgen generate
+```
+
 # Disclaimer
 
 This is the clean architecture approach used by the Fullcycle college, but I don't really feel like it is "clean", 
