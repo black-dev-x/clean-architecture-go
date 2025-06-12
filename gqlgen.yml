@@ -1,11 +1,12 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - ./internal/infra/graph/schema.graphqls
+  - internal/infra/graph/schema.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: ./internal/infra/graph/generated.go
   package: graph
+  layout: single-file
+  filename: internal/infra/graph/generated.go
 
 # Uncomment to enable federation
 # federation:
@@ -14,18 +15,18 @@ exec:
 
 # Where should the resolver implementations go?
 resolver:
-  layout: follow-schema
-  dir: ./internal/infra/graph
   package: graph
+  layout: single-file
+  filename: internal/infra/graph/resolver.go
 
 
 models:
   Order:
     model:
-      - ./internal/infra/graph/model.Order
+      - github.com/black-dev-x/clean-architecture-go/internal/infra/graph/model.Order
   OrderInput:
     model:
-      - ./internal/infra/graph/model.OrderInput
+      - github.com/black-dev-x/clean-architecture-go/internal/infra/graph/model.OrderInput
 # Optional: turn on use ` + "`" + `gqlgen:"fieldName"` + "`" + ` tags in your models
 # struct_tag: json
 
