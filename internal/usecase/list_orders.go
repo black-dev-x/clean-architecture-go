@@ -24,10 +24,7 @@ func NewListOrdersUseCase(
 }
 
 func (c *ListOrdersUseCase) Execute() (*[]*OrderDTO, error) {
-	println("ListOrdersUseCase.Execute", "start")
-	println("ListOrdersUseCase.Execute", "OrderRepository", c.OrderRepository)
 	orders, err := c.OrderRepository.FindAll()
-	println("ListOrdersUseCase.Execute", "orders", len(*orders), "err", err)
 	dtos := make([]*OrderDTO, 0, len(*orders))
 	for _, order := range *orders {
 		dtos = append(dtos, &OrderDTO{
