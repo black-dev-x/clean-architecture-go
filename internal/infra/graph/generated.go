@@ -14,7 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/black-dev-x/clean-architecture-go/internal/infra/graph/model"
+	"github.com/black-dev-x/clean-architecture-go/internal/usecase"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -48,10 +48,17 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateOrder func(childComplexity int, input model.OrderInput) int
+		CreateOrder func(childComplexity int, input usecase.OrderInputDTO) int
 	}
 
 	Order struct {
+		FinalPrice func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Price      func(childComplexity int) int
+		Tax        func(childComplexity int) int
+	}
+
+	OrderOutput struct {
 		FinalPrice func(childComplexity int) int
 		ID         func(childComplexity int) int
 		Price      func(childComplexity int) int
@@ -64,10 +71,10 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateOrder(ctx context.Context, input model.OrderInput) (*model.Order, error)
+	CreateOrder(ctx context.Context, input usecase.OrderInputDTO) (*usecase.OrderOutputDTO, error)
 }
 type QueryResolver interface {
-	Orders(ctx context.Context) ([]*model.Order, error)
+	Orders(ctx context.Context) ([]*usecase.OrderDTO, error)
 }
 
 type executableSchema struct {
@@ -99,7 +106,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateOrder(childComplexity, args["input"].(model.OrderInput)), true
+		return e.complexity.Mutation.CreateOrder(childComplexity, args["input"].(usecase.OrderInputDTO)), true
 
 	case "Order.FinalPrice":
 		if e.complexity.Order.FinalPrice == nil {
@@ -128,6 +135,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Order.Tax(childComplexity), true
+
+	case "OrderOutput.FinalPrice":
+		if e.complexity.OrderOutput.FinalPrice == nil {
+			break
+		}
+
+		return e.complexity.OrderOutput.FinalPrice(childComplexity), true
+
+	case "OrderOutput.Id":
+		if e.complexity.OrderOutput.ID == nil {
+			break
+		}
+
+		return e.complexity.OrderOutput.ID(childComplexity), true
+
+	case "OrderOutput.Price":
+		if e.complexity.OrderOutput.Price == nil {
+			break
+		}
+
+		return e.complexity.OrderOutput.Price(childComplexity), true
+
+	case "OrderOutput.Tax":
+		if e.complexity.OrderOutput.Tax == nil {
+			break
+		}
+
+		return e.complexity.OrderOutput.Tax(childComplexity), true
 
 	case "Query.orders":
 		if e.complexity.Query.Orders == nil {
@@ -274,18 +309,18 @@ func (ec *executionContext) field_Mutation_createOrder_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_createOrder_argsInput(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (model.OrderInput, error) {
+) (usecase.OrderInputDTO, error) {
 	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal model.OrderInput
+		var zeroVal usecase.OrderInputDTO
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNOrderInput2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrderInput(ctx, tmp)
+		return ec.unmarshalNOrderInput2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderInputDTO(ctx, tmp)
 	}
 
-	var zeroVal model.OrderInput
+	var zeroVal usecase.OrderInputDTO
 	return zeroVal, nil
 }
 
@@ -451,7 +486,7 @@ func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateOrder(rctx, fc.Args["input"].(model.OrderInput))
+		return ec.resolvers.Mutation().CreateOrder(rctx, fc.Args["input"].(usecase.OrderInputDTO))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -463,9 +498,9 @@ func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Order)
+	res := resTmp.(*usecase.OrderOutputDTO)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrderOutput2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderOutputDTO(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -477,15 +512,15 @@ func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "Id":
-				return ec.fieldContext_Order_Id(ctx, field)
+				return ec.fieldContext_OrderOutput_Id(ctx, field)
 			case "Price":
-				return ec.fieldContext_Order_Price(ctx, field)
+				return ec.fieldContext_OrderOutput_Price(ctx, field)
 			case "Tax":
-				return ec.fieldContext_Order_Tax(ctx, field)
+				return ec.fieldContext_OrderOutput_Tax(ctx, field)
 			case "FinalPrice":
-				return ec.fieldContext_Order_FinalPrice(ctx, field)
+				return ec.fieldContext_OrderOutput_FinalPrice(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type OrderOutput", field.Name)
 		},
 	}
 	defer func() {
@@ -502,7 +537,7 @@ func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_Id(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_Id(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderDTO) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_Id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -546,7 +581,7 @@ func (ec *executionContext) fieldContext_Order_Id(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_Price(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_Price(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderDTO) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_Price(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -590,7 +625,7 @@ func (ec *executionContext) fieldContext_Order_Price(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_Tax(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_Tax(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderDTO) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_Tax(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -634,7 +669,7 @@ func (ec *executionContext) fieldContext_Order_Tax(_ context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_FinalPrice(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+func (ec *executionContext) _Order_FinalPrice(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderDTO) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_FinalPrice(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -678,6 +713,182 @@ func (ec *executionContext) fieldContext_Order_FinalPrice(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _OrderOutput_Id(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderOutputDTO) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OrderOutput_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OrderOutput_Id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrderOutput",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OrderOutput_Price(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderOutputDTO) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OrderOutput_Price(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OrderOutput_Price(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrderOutput",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OrderOutput_Tax(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderOutputDTO) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OrderOutput_Tax(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tax, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OrderOutput_Tax(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrderOutput",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OrderOutput_FinalPrice(ctx context.Context, field graphql.CollectedField, obj *usecase.OrderOutputDTO) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OrderOutput_FinalPrice(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FinalPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OrderOutput_FinalPrice(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrderOutput",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_orders(ctx, field)
 	if err != nil {
@@ -704,9 +915,9 @@ func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Order)
+	res := resTmp.([]*usecase.OrderDTO)
 	fc.Result = res
-	return ec.marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderDTOᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_orders(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2814,8 +3025,8 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputOrderInput(ctx context.Context, obj any) (model.OrderInput, error) {
-	var it model.OrderInput
+func (ec *executionContext) unmarshalInputOrderInput(ctx context.Context, obj any) (usecase.OrderInputDTO, error) {
+	var it usecase.OrderInputDTO
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -2914,7 +3125,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var orderImplementors = []string{"Order"}
 
-func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *model.Order) graphql.Marshaler {
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *usecase.OrderDTO) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -2940,6 +3151,60 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "FinalPrice":
 			out.Values[i] = ec._Order_FinalPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var orderOutputImplementors = []string{"OrderOutput"}
+
+func (ec *executionContext) _OrderOutput(ctx context.Context, sel ast.SelectionSet, obj *usecase.OrderOutputDTO) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderOutputImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OrderOutput")
+		case "Id":
+			out.Values[i] = ec._OrderOutput_Id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "Price":
+			out.Values[i] = ec._OrderOutput_Price(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "Tax":
+			out.Values[i] = ec._OrderOutput_Tax(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "FinalPrice":
+			out.Values[i] = ec._OrderOutput_FinalPrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3405,11 +3670,7 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
-func (ec *executionContext) marshalNOrder2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v model.Order) graphql.Marshaler {
-	return ec._Order(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderDTOᚄ(ctx context.Context, sel ast.SelectionSet, v []*usecase.OrderDTO) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3433,7 +3694,7 @@ func (ec *executionContext) marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑx�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderDTO(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3453,7 +3714,7 @@ func (ec *executionContext) marshalNOrder2ᚕᚖgithubᚗcomᚋblackᚑdevᚑx�
 	return ret
 }
 
-func (ec *executionContext) marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v *model.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderDTO(ctx context.Context, sel ast.SelectionSet, v *usecase.OrderDTO) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3463,9 +3724,23 @@ func (ec *executionContext) marshalNOrder2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcl
 	return ec._Order(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOrderInput2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋinfraᚋgraphᚋmodelᚐOrderInput(ctx context.Context, v any) (model.OrderInput, error) {
+func (ec *executionContext) unmarshalNOrderInput2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderInputDTO(ctx context.Context, v any) (usecase.OrderInputDTO, error) {
 	res, err := ec.unmarshalInputOrderInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrderOutput2githubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderOutputDTO(ctx context.Context, sel ast.SelectionSet, v usecase.OrderOutputDTO) graphql.Marshaler {
+	return ec._OrderOutput(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOrderOutput2ᚖgithubᚗcomᚋblackᚑdevᚑxᚋcleanᚑarchitectureᚑgoᚋinternalᚋusecaseᚐOrderOutputDTO(ctx context.Context, sel ast.SelectionSet, v *usecase.OrderOutputDTO) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._OrderOutput(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

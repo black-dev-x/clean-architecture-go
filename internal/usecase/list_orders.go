@@ -23,12 +23,14 @@ func NewListOrdersUseCase(
 	}
 }
 
-func (c *ListOrdersUseCase) Execute() (*[]OrderDTO, error) {
+func (c *ListOrdersUseCase) Execute() (*[]*OrderDTO, error) {
+	println("ListOrdersUseCase.Execute", "start")
+	println("ListOrdersUseCase.Execute", "OrderRepository", c.OrderRepository)
 	orders, err := c.OrderRepository.FindAll()
-
-	var dtos []OrderDTO
+	println("ListOrdersUseCase.Execute", "orders", len(*orders), "err", err)
+	dtos := make([]*OrderDTO, 0, len(*orders))
 	for _, order := range *orders {
-		dtos = append(dtos, OrderDTO{
+		dtos = append(dtos, &OrderDTO{
 			ID:         order.ID,
 			Price:      order.Price,
 			Tax:        order.Tax,
